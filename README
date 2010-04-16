@@ -1,0 +1,25 @@
+A test module to measure irq latency on the Overo running Linux.
+
+Jumper GPIO_146 to GPIO_147 but hook an oscope probe to do the 
+measurement between them.
+
+
+GPIO_146 ---- TP ---- GPIO_147
+               |
+            oscope
+
+
+Build the module, insert it and then write something to 
+/dev/irqlat like
+
+echo 1 > /dev/irqlat
+
+It doesn't matter what you write, it's ignored.
+
+But watch the rise and fall of the signal. That's the irq latency
+of the system. At least as far as I can tell.
+
+If I did something wrong, let me know.
+
+
+
