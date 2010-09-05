@@ -37,14 +37,12 @@ static void irqlat_complete(void *arg)
 
 static irqreturn_t irqlat_handler(int irq, void *dev_id)
 {
-	if (gpio_get_value(IRQ_PIN)) {
-		if (irqlat_dev.context) {			
-			gpio_set_value(TEST_PIN, 0);
-			irqlat_complete(irqlat_dev.context);			
-			irqlat_dev.context = 0;
-		}
+	if (irqlat_dev.context) {			
+		gpio_set_value(TEST_PIN, 0);
+		irqlat_complete(irqlat_dev.context);			
+		irqlat_dev.context = 0;
 	}
-
+	
 	return IRQ_HANDLED;
 }
 
