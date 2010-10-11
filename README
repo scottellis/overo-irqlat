@@ -1,6 +1,14 @@
-A test module to measure irq latency on the Overo running Linux.
+A linux module to measure gpio irq latency of an OMAP3 system and
+measure the time it takes to toggle a gpio pin in a kernel module. 
 
-Jumper GPIO_146 to GPIO_147 but hook an oscope probe to do the 
+The test requires an oscope to do the actual measurements. The
+module requires two gpio pins jumpered together. The pins should
+already be mux'd as GPIO and not otherwise used.
+
+The example is using a Gumstix Overo and two convenient pins on
+the expansion board headers.
+
+Jumper GPIO_146 to GPIO_147 and hook an oscope probe to do the 
 measurement between them.
 
 
@@ -9,17 +17,34 @@ GPIO_146 ---- TP ---- GPIO_147
             oscope
 
 
-Build the module, insert it and then write something to 
-/dev/irqlat like
+Build the module, insert it and then write 1 to do an irq latency
+test or anything else to do a gpio toggle speed test.
+
+For example:
 
 echo 1 > /dev/irqlat
 
-It doesn't matter what you write, it's ignored.
+or 
 
-But watch the rise and fall of the signal. That's the irq latency
-of the system. At least as far as I can tell.
-
-If I did something wrong, let me know.
+echo 2 > /dev/irqlat
 
 
+Set your scope to trigger on a rising signal.
+
+The program sets up GPIO_146 as an input and irq enables it for an 
+IRQ_TRIGGER_RISING signal.
+ 
+For the irq latency test, the program raises GPIO_147 and in the
+GPIO_146 irq handler, it lowers GPIO_147 again. The difference 
+between the rise and fall of GPIO_147 is the irq latency, minus
+the time the gpio_set() call takes. I get values in the neighborhood
+of 8-9 microseconds.
+
+For the gpio toggle test, the GPIO_146 irq is not enabled and not
+part of the test. The module just runs a tight loop setting GPIO_147
+high then low again for 1000 iterations. You can watch with an 
+oscope the time this takes. I get a number around 200 nanoseconds
+to go from one state to the other.
+
+See the source code for more details.
 
