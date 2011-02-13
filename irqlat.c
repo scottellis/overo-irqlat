@@ -79,7 +79,14 @@ static void do_latency_test(void)
 
 	irqlat_dev.context = &done;
 	gpio_set_value(TEST_PIN, 1);
-	wait_for_completion(&done);
+
+	result = wait_for_completion_interruptible_timeout(&done, HZ / 2);
+
+	if (result == 0) {
+		printk(KERN_ALERT "Timed out waiting for interrupt.\n");
+		printk(KERN_ALERT "Did you forget to jumper the pins?\n");
+	}
+
 	free_irq(irqlat_dev.irq, &irqlat_dev);
 }
 
@@ -204,7 +211,7 @@ static int __init irqlat_init_pins(void)
 	}
 
 	irqlat_dev.irq = OMAP_GPIO_IRQ(IRQ_PIN);
-	
+
 	return 0;
 
 init_pins_fail_3:
