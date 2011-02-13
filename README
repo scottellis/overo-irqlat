@@ -45,17 +45,26 @@ Set your scope to trigger on a rising signal.
 The program sets up IRQ_PIN as an input and irq enables it for an 
 IRQ_TRIGGER_RISING signal.
 
-I last tested with a 2.6.34 kernel.
+I last tested with a 2.6.36 kernel and two Overo COMs, one 720 MHz Tide
+and one 500 MHz board.
  
 For the irq latency test, the program raises TEST_PIN and in the IRQ_PIN irq 
 handler, it lowers TEST_PIN again. The difference between the rise and fall of 
 TEST_PIN is the irq latency, minus the time the gpio_set() call takes. I get 
-values in the neighborhood of 8-9 microseconds.
+values in the neighborhood of 8-9 usecs for either board. There is a good usec
+variation in this test, sometimes up to 10 usecs for either board.
+
+Refer to the *_gpio-irq-latency.png screenshots.
 
 For the gpio toggle test, the IRQ_PIN irq handler is not enabled and not used
 in the test. The module just runs a tight loop setting TEST_PIN high then low
 again for 1000 iterations. You can watch with an oscope the time this takes.
-I get a number around 200 nanoseconds to go from one state to the other.
+
+Refer to the *-gpio-toggle-1000.png screenshots.
+
+For the 500 MHz system, ~420 usecs for 1000 cycles = ~210 nsecs to change state
+For the 720 MHz system, ~290 usecs for 1000 cycles = ~145 nsecs to change state
+
 
 See the source code for more details.
 
