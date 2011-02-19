@@ -17,16 +17,16 @@ The example in the code is using a Gumstix Overo and two convenient pins on the
 expansion board headers. Substitute different pins as needed. The definitions
 are at the top of the source file.
 
-IRQ_PIN - GPIO_146
-TEST_PIN - GPIO_147
+    IRQ_PIN - GPIO_146
+    TEST_PIN - GPIO_147
 
 Jumper IRQ_PIN to TEST_PIN and hook an oscope probe to do the measurement
 between them.
 
 
-IRQ_PIN ---- TP ---- TEST_PIN
-             |
-           oscope
+    IRQ_PIN ---- TP ---- TEST_PIN
+                 |
+               oscope
 
 
 Build
@@ -45,12 +45,14 @@ anything else to do a gpio toggle speed test.
 For example:
 
 This runs the irq latency test
-echo 1 > /dev/irqlat
+
+    echo 1 > /dev/irqlat
 
 or 
 
 This runs the gpio toggle test
-echo 2 > /dev/irqlat
+
+    echo 2 > /dev/irqlat
 
 
 Set your scope to trigger on a rising signal.
