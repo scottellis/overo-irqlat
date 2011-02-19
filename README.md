@@ -94,8 +94,8 @@ Refer to the *-gpio-toggle-1000.png screenshots.
 
 Here are the measurements I get.
 
-500 MHz COM: ~420 usecs for 1000 cycles = ~210 nsecs to change state = ~4.76 MHz
-720 MHz COM: ~290 usecs for 1000 cycles = ~145 nsecs to change state = ~6.90 MHz
+    500 MHz COM: ~420 usecs for 1000 cycles = ~210 nsecs to change state = ~4.76 MHz
+    720 MHz COM: ~290 usecs for 1000 cycles = ~145 nsecs to change state = ~6.90 MHz
 
 
 See the source code for more details.
