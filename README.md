@@ -35,24 +35,27 @@ Build
 There is a file you can source to set up the environment for building using
 the OE tools configured the standard gumstix way.
 
+    $ git clone git://github.com/scottellis/overo-irqlat.git
+    $ cd overo-irqlat
+    $ source overo-source-me.txt
+    $ make
  
+
 Run
 -------
  
-Build the module, insert it and then write 1 to do an irq latency test or
-anything else to do a gpio toggle speed test.
+Copy the irqlat.ko module to the board, insert it and then write 1 to do an 
+irq latency test or anything else to do a gpio toggle speed test.
 
-For example:
+    root@overo:~# insmod irqlat.ko
 
 This runs the irq latency test
 
-    echo 1 > /dev/irqlat
-
-or 
+    root@overo:~# echo 1 > /dev/irqlat
 
 This runs the gpio toggle test
 
-    echo 2 > /dev/irqlat
+    root@overo:~# echo 2 > /dev/irqlat
 
 
 Set your scope to trigger on a rising signal.
