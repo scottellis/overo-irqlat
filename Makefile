@@ -12,6 +12,8 @@ else
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules 
 endif
 
+install:
+	sudo cp irqlat.ko /exports/overo/home/root
 
 clean:
 	rm -rf *~ *.ko *.o *.mod.c modules.order Module.symvers .irqlat* .tmp_versions
