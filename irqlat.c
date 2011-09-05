@@ -4,14 +4,14 @@
   with an oscope to do the actual timings.
 
   The latency test involves irq enabling the IRQ_PIN then setting 
-  the TEST_PIN high and when the IRQ_PIN's irq handler is
-  invoked, setting the TEST_PIN low again. The time between the
-  high and low of the TEST_PIN is the irq latency +/- the time it
+  the TOGGLE_PIN high and when the IRQ_PIN's irq handler is
+  invoked, setting the TOGGLE_PIN low again. The time between the
+  high and low of the TOGGLE_PIN is the irq latency +/- the time it
   takes to set a gpio pin.
 
   The gpio toggle speed test attempts to measure how long it takes to 
   set/unset a gpio pin by running a tight loop of 1000 iterations doing
-  just this. Again watch TEST_PIN with an oscope to do the measurement.
+  just this. Again watch TOGGLE_PIN with an oscope to do the measurement.
 
   FWIW, I get an irq latency around 8-9 microseconds and for the toggling
   test. I get a frequency of 2.5 MHz or around 400 nanoseconds for the HIGH/
@@ -35,7 +35,7 @@
 
 
 #define IRQ_PIN 146
-#define TEST_PIN 147 
+#define TOGGLE_PIN 147 
 
 struct irqlat_dev {
 	dev_t devt;
@@ -51,7 +51,7 @@ static struct irqlat_dev irqlat_dev;
 
 static irqreturn_t irqlat_handler(int irq, void *dev_id)
 {
-	gpio_set_value(TEST_PIN, 0);
+	gpio_set_value(TOGGLE_PIN, 0);
 
 	if (irqlat_dev.context) {			
 		complete(irqlat_dev.context);			
@@ -78,7 +78,7 @@ static void do_latency_test(void)
 	}
 
 	irqlat_dev.context = &done;
-	gpio_set_value(TEST_PIN, 1);
+	gpio_set_value(TOGGLE_PIN, 1);
 
 	result = wait_for_completion_interruptible_timeout(&done, HZ / 2);
 
@@ -95,8 +95,8 @@ static void do_toggle_test(void)
 	int i;
 
 	for (i = 0; i < 1000; i++) {
-		gpio_set_value(TEST_PIN, 1);
-		gpio_set_value(TEST_PIN, 0);
+		gpio_set_value(TOGGLE_PIN, 1);
+		gpio_set_value(TOGGLE_PIN, 0);
 	}
 }
 
@@ -190,12 +190,12 @@ static int __init irqlat_init_class(void)
 
 static int __init irqlat_init_pins(void)
 {
-	if (gpio_request(TEST_PIN, "testpin")) {
+	if (gpio_request(TOGGLE_PIN, "testpin")) {
 		printk(KERN_ALERT "gpio_request failed\n");
 		goto init_pins_fail_1;
 	}
 
-	if (gpio_direction_output(TEST_PIN, 0)) {
+	if (gpio_direction_output(TOGGLE_PIN, 0)) {
 		printk(KERN_ALERT "gpio_direction_output failed\n");
 		goto init_pins_fail_2;
 	}
@@ -218,7 +218,7 @@ init_pins_fail_3:
 	gpio_free(IRQ_PIN);
 
 init_pins_fail_2:
-	gpio_free(TEST_PIN);
+	gpio_free(TOGGLE_PIN);
 
 init_pins_fail_1:
 
@@ -257,7 +257,7 @@ module_init(irqlat_init);
 
 static void __exit irqlat_exit(void)
 {
-	gpio_free(TEST_PIN);
+	gpio_free(TOGGLE_PIN);
 	gpio_free(IRQ_PIN);
 
 	device_destroy(irqlat_dev.class, irqlat_dev.devt);

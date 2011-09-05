@@ -11,20 +11,20 @@ The test requires an oscope to do the actual measurements and two gpio pins
 jumpered together. The pins are assumed to be already mux'd as GPIO and not 
 otherwise being used.
 
-In the code the pins are labeled TEST_PIN and IRQ_PIN. They are interchangeable.
+In the code the pins are labeled TOGGLE_PIN and IRQ_PIN. They are interchangeable.
 
 The example in the code is using a Gumstix Overo and two convenient pins on the
 expansion board headers. Substitute different pins as needed. The definitions
 are at the top of the source file.
 
     IRQ_PIN - GPIO_146
-    TEST_PIN - GPIO_147
+    TOGGLE_PIN - GPIO_147
 
-Jumper IRQ_PIN to TEST_PIN and hook an oscope probe to do the measurement
+Jumper IRQ_PIN to TOGGLE_PIN and hook an oscope probe to do the measurement
 between them.
 
 
-    IRQ_PIN ---- TP ---- TEST_PIN
+    IRQ_PIN ---- TP ---- TOGGLE_PIN
                  |
                oscope
 
@@ -74,9 +74,9 @@ The same tftp booted kernel, nfs root filesystem and Tobi expansion board was
 used for both COMs. Only the boot.scr on the SD card specifying the different
 mpurates was different.
  
-For the irq latency test, the program raises TEST_PIN and in the IRQ_PIN irq 
-handler, it lowers TEST_PIN again. The difference between the rise and fall of 
-TEST_PIN is what I am calling the irq latency. This ignores the time the 
+For the irq latency test, the program raises TOGGLE_PIN and in the IRQ_PIN irq 
+handler, it lowers TOGGLE_PIN again. The difference between the rise and fall of 
+TOGGLE_PIN is what I am calling the irq latency. This ignores the time the 
 gpio_set() call takes, but you can see from the next test that it is negligble
 for this measurement. 
 
@@ -87,7 +87,7 @@ board, but never under 8 usecs.
 Refer to the *_gpio-irq-latency.png screenshots.
 
 For the gpio toggle test, the IRQ_PIN irq handler is not enabled and not used
-in the test. The module just runs a tight loop setting TEST_PIN high then low
+in the test. The module just runs a tight loop setting TOGGLE_PIN high then low
 again for 1000 iterations. You can watch with an oscope the time this takes.
 
 Refer to the *-gpio-toggle-1000.png screenshots.
