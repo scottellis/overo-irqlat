@@ -40,14 +40,14 @@
 struct irqlat_dev {
 	dev_t devt;
 	struct cdev cdev;
+	struct device *device;
 	struct semaphore sem;
-	struct class *class;
 	void *context;
 	int irq;
 };
 
 static struct irqlat_dev irqlat_dev;
-
+static struct class *irqlat_class;
 
 static irqreturn_t irqlat_handler(int irq, void *dev_id)
 {
@@ -113,15 +113,11 @@ static ssize_t irqlat_write(struct file *filp, const char __user *buff,
 		return -ERESTARTSYS;
 
 	if (copy_from_user(cmd, buff, 1)) {
-		printk(KERN_ALERT "Error copy_from_user\n");
 		status = -EFAULT;
 		goto irqlat_write_done;
 	}
-
-	/* 
-	  Nothing fancy, '1' is latency test, anything else is
-          toggle test.
-	*/
+ 
+	// Nothing fancy, '1' is latency test, anything else is a toggle test.	
 	if (cmd[0] == '1')
 		do_latency_test();
 	else
@@ -149,22 +145,16 @@ static int __init irqlat_init_cdev(void)
 	irqlat_dev.devt = MKDEV(0, 0);
 
 	error = alloc_chrdev_region(&irqlat_dev.devt, 0, 1, "irqlat");
-	if (error < 0) {
-		printk(KERN_ALERT 
-			"alloc_chrdev_region() failed: error = %d \n", 
-			error);
-		
-		return -1;
-	}
+	if (error)
+		return error;
 
 	cdev_init(&irqlat_dev.cdev, &irqlat_fops);
 	irqlat_dev.cdev.owner = THIS_MODULE;
 
 	error = cdev_add(&irqlat_dev.cdev, irqlat_dev.devt, 1);
 	if (error) {
-		printk(KERN_ALERT "cdev_add() failed: error = %d\n", error);
 		unregister_chrdev_region(irqlat_dev.devt, 1);
-		return -1;
+		return error;
 	}	
 
 	return 0;
@@ -172,17 +162,24 @@ static int __init irqlat_init_cdev(void)
 
 static int __init irqlat_init_class(void)
 {
-	irqlat_dev.class = class_create(THIS_MODULE, "irqlat");
+	int ret;
 
-	if (!irqlat_dev.class) {
-		printk(KERN_ALERT "class_create(irqlat) failed\n");
-		return -1;
+	if (!irqlat_class) {
+		irqlat_class = class_create(THIS_MODULE, "irqlat");
+
+		if (IS_ERR(irqlat_class)) {
+			ret = PTR_ERR(irqlat_class);
+			return ret;
+		}
 	}
 
-	if (!device_create(irqlat_dev.class, NULL, irqlat_dev.devt, 
-				NULL, "irqlat")) {
-		class_destroy(irqlat_dev.class);
-		return -1;
+	irqlat_dev.device = device_create(irqlat_class, NULL, irqlat_dev.devt, 
+									NULL, "irqlat");
+
+	if (IS_ERR(irqlat_dev.device)) {
+		ret = PTR_ERR(irqlat_dev.device);
+		class_destroy(irqlat_class);
+		return ret;
 	}
 
 	return 0;
@@ -242,8 +239,8 @@ static int __init irqlat_init(void)
 	return 0;
 
 init_fail_3:
-	device_destroy(irqlat_dev.class, irqlat_dev.devt);
-  	class_destroy(irqlat_dev.class);
+	device_destroy(irqlat_class, irqlat_dev.devt);
+  	class_destroy(irqlat_class);
 
 init_fail_2:
 	cdev_del(&irqlat_dev.cdev);
@@ -260,8 +257,8 @@ static void __exit irqlat_exit(void)
 	gpio_free(TOGGLE_PIN);
 	gpio_free(IRQ_PIN);
 
-	device_destroy(irqlat_dev.class, irqlat_dev.devt);
-  	class_destroy(irqlat_dev.class);
+	device_destroy(irqlat_class, irqlat_dev.devt);
+  	class_destroy(irqlat_class);
 
 	cdev_del(&irqlat_dev.cdev);
 	unregister_chrdev_region(irqlat_dev.devt, 1);
