@@ -35,20 +35,23 @@
 
 #define MODULE_NAME "irqlat"
 
+// gpio 146 is pin 27 on most Gumstix expansion boards
 #define IRQ_PIN 146
+// gpio 147 is pin 29
 #define TOGGLE_PIN 147 
 
 struct irqlat_dev {
 	dev_t devt;
 	struct cdev cdev;
 	struct device *device;
+	struct class *class;
 	struct semaphore sem;
 	void *context;
 	int irq;
 };
 
 static struct irqlat_dev irqlat_dev;
-static struct class *irqlat_class;
+
 
 static irqreturn_t irqlat_handler(int irq, void *dev_id)
 {
@@ -165,21 +168,21 @@ static int __init irqlat_init_class(void)
 {
 	int ret;
 
-	if (!irqlat_class) {
-		irqlat_class = class_create(THIS_MODULE, MODULE_NAME);
+	if (!irqlat_dev.class) {
+		irqlat_dev.class = class_create(THIS_MODULE, MODULE_NAME);
 
-		if (IS_ERR(irqlat_class)) {
-			ret = PTR_ERR(irqlat_class);
+		if (IS_ERR(irqlat_dev.class)) {
+			ret = PTR_ERR(irqlat_dev.class);
 			return ret;
 		}
 	}
 
-	irqlat_dev.device = device_create(irqlat_class, NULL, irqlat_dev.devt, 
+	irqlat_dev.device = device_create(irqlat_dev.class, NULL, irqlat_dev.devt, 
 					NULL, MODULE_NAME);
 
 	if (IS_ERR(irqlat_dev.device)) {
 		ret = PTR_ERR(irqlat_dev.device);
-		class_destroy(irqlat_class);
+		class_destroy(irqlat_dev.class);
 		return ret;
 	}
 
@@ -240,8 +243,8 @@ static int __init irqlat_init(void)
 	return 0;
 
 init_fail_3:
-	device_destroy(irqlat_class, irqlat_dev.devt);
-  	class_destroy(irqlat_class);
+	device_destroy(irqlat_dev.class, irqlat_dev.devt);
+  	class_destroy(irqlat_dev.class);
 
 init_fail_2:
 	cdev_del(&irqlat_dev.cdev);
@@ -258,8 +261,8 @@ static void __exit irqlat_exit(void)
 	gpio_free(TOGGLE_PIN);
 	gpio_free(IRQ_PIN);
 
-	device_destroy(irqlat_class, irqlat_dev.devt);
-  	class_destroy(irqlat_class);
+	device_destroy(irqlat_dev.class, irqlat_dev.devt);
+  	class_destroy(irqlat_dev.class);
 
 	cdev_del(&irqlat_dev.cdev);
 	unregister_chrdev_region(irqlat_dev.devt, 1);
