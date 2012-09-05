@@ -26,8 +26,6 @@
 #include <linux/fs.h>
 #include <linux/cdev.h>
 #include <asm/uaccess.h>
-#include <linux/string.h>
-#include <linux/kernel.h>
 #include <linux/device.h>
 #include <linux/gpio.h>
 #include <linux/interrupt.h>
@@ -90,6 +88,9 @@ static void do_latency_test(void)
 		printk(KERN_ALERT "Timed out waiting for interrupt.\n");
 		printk(KERN_ALERT "Did you forget to jumper the pins?\n");
 	}
+	else {
+		printk(KERN_ALERT "Interrupt processed\n");
+	}
 
 	free_irq(irqlat.irq, &irqlat);
 }
@@ -102,6 +103,8 @@ static void do_toggle_test(void)
 		gpio_set_value(TOGGLE_PIN, 1);
 		gpio_set_value(TOGGLE_PIN, 0);
 	}
+
+	printk(KERN_ALERT "Toggle test complete\n");
 }
 
 static ssize_t irqlat_write(struct file *filp, const char __user *buff,
