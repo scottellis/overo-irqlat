@@ -29,10 +29,11 @@
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>
 
+#define MODULE_NAME "irqlat"
 
 #define IRQ_PIN 146
 #define TOGGLE_PIN 147 
@@ -69,7 +70,7 @@ static void do_latency_test(void)
 	result = request_irq(irqlat_dev.irq,
 				irqlat_handler,
 				IRQF_TRIGGER_RISING,
-				"irqlat",
+				MODULE_NAME,
 				&irqlat_dev);
 
 	if (result < 0) {
@@ -144,7 +145,7 @@ static int __init irqlat_init_cdev(void)
 
 	irqlat_dev.devt = MKDEV(0, 0);
 
-	error = alloc_chrdev_region(&irqlat_dev.devt, 0, 1, "irqlat");
+	error = alloc_chrdev_region(&irqlat_dev.devt, 0, 1, MODULE_NAME);
 	if (error)
 		return error;
 
@@ -165,7 +166,7 @@ static int __init irqlat_init_class(void)
 	int ret;
 
 	if (!irqlat_class) {
-		irqlat_class = class_create(THIS_MODULE, "irqlat");
+		irqlat_class = class_create(THIS_MODULE, MODULE_NAME);
 
 		if (IS_ERR(irqlat_class)) {
 			ret = PTR_ERR(irqlat_class);
@@ -174,7 +175,7 @@ static int __init irqlat_init_class(void)
 	}
 
 	irqlat_dev.device = device_create(irqlat_class, NULL, irqlat_dev.devt, 
-									NULL, "irqlat");
+					NULL, MODULE_NAME);
 
 	if (IS_ERR(irqlat_dev.device)) {
 		ret = PTR_ERR(irqlat_dev.device);
@@ -269,5 +270,5 @@ module_exit(irqlat_exit);
 MODULE_AUTHOR("Scott Ellis");
 MODULE_DESCRIPTION("A module for testing irq latency");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_VERSION("0.2");
+MODULE_VERSION("0.3");
 
