@@ -50,16 +50,16 @@ struct irqlat_dev {
 	int irq;
 };
 
-static struct irqlat_dev irqlat_dev;
+static struct irqlat_dev irqlat;
 
 
 static irqreturn_t irqlat_handler(int irq, void *dev_id)
 {
 	gpio_set_value(TOGGLE_PIN, 0);
 
-	if (irqlat_dev.context) {			
-		complete(irqlat_dev.context);			
-		irqlat_dev.context = 0;
+	if (irqlat.context) {			
+		complete(irqlat.context);			
+		irqlat.context = 0;
 	}
 	
 	return IRQ_HANDLED;
@@ -70,18 +70,18 @@ static void do_latency_test(void)
 	DECLARE_COMPLETION_ONSTACK(done);
 	int result;
 
-	result = request_irq(irqlat_dev.irq,
+	result = request_irq(irqlat.irq,
 				irqlat_handler,
 				IRQF_TRIGGER_RISING,
 				MODULE_NAME,
-				&irqlat_dev);
+				&irqlat);
 
 	if (result < 0) {
 		printk(KERN_ALERT "request_irq failed: %d\n", result);
 		return;
 	}
 
-	irqlat_dev.context = &done;
+	irqlat.context = &done;
 	gpio_set_value(TOGGLE_PIN, 1);
 
 	result = wait_for_completion_interruptible_timeout(&done, HZ / 2);
@@ -91,7 +91,7 @@ static void do_latency_test(void)
 		printk(KERN_ALERT "Did you forget to jumper the pins?\n");
 	}
 
-	free_irq(irqlat_dev.irq, &irqlat_dev);
+	free_irq(irqlat.irq, &irqlat);
 }
 
 static void do_toggle_test(void)
@@ -113,7 +113,7 @@ static ssize_t irqlat_write(struct file *filp, const char __user *buff,
 	if (count == 0)
 		return 0;
 
-	if (down_interruptible(&irqlat_dev.sem))
+	if (down_interruptible(&irqlat.sem))
 		return -ERESTARTSYS;
 
 	if (copy_from_user(cmd, buff, 1)) {
@@ -132,7 +132,7 @@ static ssize_t irqlat_write(struct file *filp, const char __user *buff,
 
 irqlat_write_done:
 
-	up(&irqlat_dev.sem);
+	up(&irqlat.sem);
 
 	return status;
 }
@@ -146,18 +146,18 @@ static int __init irqlat_init_cdev(void)
 {
 	int error;
 
-	irqlat_dev.devt = MKDEV(0, 0);
+	irqlat.devt = MKDEV(0, 0);
 
-	error = alloc_chrdev_region(&irqlat_dev.devt, 0, 1, MODULE_NAME);
+	error = alloc_chrdev_region(&irqlat.devt, 0, 1, MODULE_NAME);
 	if (error)
 		return error;
 
-	cdev_init(&irqlat_dev.cdev, &irqlat_fops);
-	irqlat_dev.cdev.owner = THIS_MODULE;
+	cdev_init(&irqlat.cdev, &irqlat_fops);
+	irqlat.cdev.owner = THIS_MODULE;
 
-	error = cdev_add(&irqlat_dev.cdev, irqlat_dev.devt, 1);
+	error = cdev_add(&irqlat.cdev, irqlat.devt, 1);
 	if (error) {
-		unregister_chrdev_region(irqlat_dev.devt, 1);
+		unregister_chrdev_region(irqlat.devt, 1);
 		return error;
 	}	
 
@@ -168,21 +168,21 @@ static int __init irqlat_init_class(void)
 {
 	int ret;
 
-	if (!irqlat_dev.class) {
-		irqlat_dev.class = class_create(THIS_MODULE, MODULE_NAME);
+	if (!irqlat.class) {
+		irqlat.class = class_create(THIS_MODULE, MODULE_NAME);
 
-		if (IS_ERR(irqlat_dev.class)) {
-			ret = PTR_ERR(irqlat_dev.class);
+		if (IS_ERR(irqlat.class)) {
+			ret = PTR_ERR(irqlat.class);
 			return ret;
 		}
 	}
 
-	irqlat_dev.device = device_create(irqlat_dev.class, NULL, irqlat_dev.devt, 
+	irqlat.device = device_create(irqlat.class, NULL, irqlat.devt, 
 					NULL, MODULE_NAME);
 
-	if (IS_ERR(irqlat_dev.device)) {
-		ret = PTR_ERR(irqlat_dev.device);
-		class_destroy(irqlat_dev.class);
+	if (IS_ERR(irqlat.device)) {
+		ret = PTR_ERR(irqlat.device);
+		class_destroy(irqlat.class);
 		return ret;
 	}
 
@@ -211,7 +211,7 @@ static int __init irqlat_init_pins(void)
 		goto init_pins_fail_3;
 	}
 
-	irqlat_dev.irq = OMAP_GPIO_IRQ(IRQ_PIN);
+	irqlat.irq = OMAP_GPIO_IRQ(IRQ_PIN);
 
 	return 0;
 
@@ -228,8 +228,7 @@ init_pins_fail_1:
 
 static int __init irqlat_init(void)
 {
-	memset(&irqlat_dev, 0, sizeof(irqlat_dev));
-	sema_init(&irqlat_dev.sem, 1);
+	sema_init(&irqlat.sem, 1);
 
 	if (irqlat_init_cdev())
 		goto init_fail_1;
@@ -243,12 +242,12 @@ static int __init irqlat_init(void)
 	return 0;
 
 init_fail_3:
-	device_destroy(irqlat_dev.class, irqlat_dev.devt);
-  	class_destroy(irqlat_dev.class);
+	device_destroy(irqlat.class, irqlat.devt);
+  	class_destroy(irqlat.class);
 
 init_fail_2:
-	cdev_del(&irqlat_dev.cdev);
-	unregister_chrdev_region(irqlat_dev.devt, 1);
+	cdev_del(&irqlat.cdev);
+	unregister_chrdev_region(irqlat.devt, 1);
 
 init_fail_1:
 
@@ -261,11 +260,11 @@ static void __exit irqlat_exit(void)
 	gpio_free(TOGGLE_PIN);
 	gpio_free(IRQ_PIN);
 
-	device_destroy(irqlat_dev.class, irqlat_dev.devt);
-  	class_destroy(irqlat_dev.class);
+	device_destroy(irqlat.class, irqlat.devt);
+  	class_destroy(irqlat.class);
 
-	cdev_del(&irqlat_dev.cdev);
-	unregister_chrdev_region(irqlat_dev.devt, 1);
+	cdev_del(&irqlat.cdev);
+	unregister_chrdev_region(irqlat.devt, 1);
 }
 module_exit(irqlat_exit);
 
