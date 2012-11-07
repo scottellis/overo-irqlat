@@ -41,6 +41,9 @@ the OE tools configured the standard gumstix way.
     $ make
  
 
+Use the yocto-cross-env.sh script for yocto built environments.
+
+
 Run
 -------
  
