@@ -9,7 +9,7 @@ fi
 SYSROOTSDIR=${OETMP}/sysroots
 STAGEDIR=${SYSROOTSDIR}/`uname -m`-linux/usr
 
-export KERNELDIR=${SYSROOTSDIR}/${MACHINE}/kernel
+export KERNELDIR=${SYSROOTSDIR}/${MACHINE}/usr/src/kernel
 
 PATH=${PATH}:${STAGEDIR}/bin:${STAGEDIR}/bin/armv7a-vfp-neon-poky-linux-gnueabi
 
