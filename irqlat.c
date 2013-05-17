@@ -214,7 +214,7 @@ static int __init irqlat_init_pins(void)
 		goto init_pins_fail_3;
 	}
 
-	irqlat.irq = OMAP_GPIO_IRQ(IRQ_PIN);
+	irqlat.irq = gpio_to_irq(IRQ_PIN);
 
 	return 0;
 
